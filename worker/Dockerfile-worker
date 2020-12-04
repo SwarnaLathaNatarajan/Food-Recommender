@@ -1,7 +1,4 @@
-##
-## You provide this
-##
-FROM dirkcgrunwald/facerec:latest
+FROM python:3.9-alpine
 
 RUN pip3 install --upgrade pika redis jsonpickle requests flask
 

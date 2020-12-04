@@ -1,18 +1,14 @@
 #
 # Worker server
 #
-import pickle
 import jsonpickle
 import platform
-from PIL import Image
 import io
 import os
 import sys
 import pika
 import redis
-import hashlib
-import face_recognition
-import numpy as np
+import requests
 
 
 hostname = platform.node()
@@ -21,14 +17,6 @@ rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost"
 
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost, redisHost))
 
-# Redis databases
-
-redisNameToHash = redis.Redis(host=redisHost, db=1)  # image name -> hash of contents
-redisHashToName = redis.Redis(host=redisHost, db=2)  # hash of contents -> {image names}
-# hash of contents -> {faces recognized}
-redisHashToFaceRec = redis.Redis(host=redisHost, db=3)
-# hash of contents-> {hash of matching images}
-redisHashToHashSet = redis.Redis(host=redisHost, db=4)
 
 # Recieve from RabbitMQ
 
@@ -53,51 +41,37 @@ def log(queue_name, routing_key, message):
 
 
 def callback(ch, method, properties, body):
-    # print(" [x] Received %r" % (body))
     data = jsonpickle.decode(body.decode())
-    image, hash, name = (
-        data["image"],
-        data["hash"],
-        data["filename"],
+    lat, lon = (
+        data["lat"],
+        data["lon"],
     )
     log(
         "logs",
         hostname + ".worker.info",
-        "Recieved message " + name,
+        "Recieved message " + lat + " , "+lon,
     )
-    redisNameToHash.set(name, hash)
-    process = True
-    if redisHashToName.exists(hash):
-        process = False
-    redisHashToName.sadd(hash, name)
-    if process:
-        with open("image.png", "wb") as img:
-            img.write(image)
-        img = face_recognition.load_image_file("image.png")
-        unknown_face_encodings = face_recognition.face_encodings(img)
-        os.remove("image.png")
-        for encoding in unknown_face_encodings:
-            log(
+    url = "https://us-restaurant-menus.p.rapidapi.com/restaurants/search/geo"
+
+    querystring = {"lon":lat,"lat":lon,"distance":"1","page":"1"}
+    log(
                 "logs",
                 hostname + ".worker.info",
-                "Face Recognition Software running",
+                "Querying Backend Rapid API",
             )
-            redisHashToFaceRec.sadd(hash, pickle.dumps(encoding))
-            for key in redisHashToFaceRec.keys():
-                if not redisHashToHashSet.sismember(key, hash):
-                    for v in redisHashToFaceRec.smembers(key):
-                        if any(
-                            face_recognition.compare_faces([encoding], pickle.loads(v))
-                        ):
-                            log(
-                                "logs",
-                                hostname + ".worker.info",
-                                "Matches found",
-                            )
-                            redisHashToHashSet.sadd(hash, key)
-                            redisHashToHashSet.sadd(key, hash)
+    headers = {
+        'x-rapidapi-key': "43148b6118mshf09d051042ef830p18dcb1jsna96c6ad3cd3d",
+        'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
+        }
 
-
+    response = requests.request("GET", url, headers=headers, params=querystring)
+    log(
+                "logs",
+                hostname + ".worker.info",
+                response.text,
+            )
+    
+   
 channel.basic_consume(queue="toWorker", auto_ack=True, on_message_callback=callback)
 
 channel.start_consuming()

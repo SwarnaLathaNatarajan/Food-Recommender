@@ -24,85 +24,26 @@ def hello():
     log(
         "logs",
         hostname + ".rest.info",
-        "Welcome to Face Rec Server",
+        "Food Recommender",
     )
-    return "<h1> Face Rec Server</h1><p> Use a valid endpoint </p>"
+    return "<h1>Food Recommender</h1><p> Use a valid endpoint </p>"
 
 
-@app.route("/scan/image/<filename>", methods=["POST"])
-def scanImg(filename):
+@app.route("/find/<lat>/<lon>", methods=["GET","POST"])
+def find(lat,lon):
     log(
         "logs",
         hostname + ".rest.info",
-        "Scanning image",
+        "Finding restaurant options nearby...",
     )
-    r = request
-    try:
-        hash = hashlib.md5(r.data).hexdigest()
-        response = {"hash": hash}
-        obj = jsonpickle.encode({"image": r.data, "hash": hash, "filename": filename})
-        enqueue("toWorker", obj)
-        log(
-            "logs",
-            hostname + ".rest.info",
-            "Hash-Filename(Image) pair added to RabbitMQ",
-        )
-    except:
-        response = {"hash": ""}
-    response_pickled = jsonpickle.encode(response)
-
-    return Response(response=response_pickled, status=200, mimetype="application/json")
-
-
-@app.route("/scan/url", methods=["POST"])
-def scanURL():
+    obj = jsonpickle.encode({"lat": lat,"lon":lon})
+    enqueue("toWorker", obj)
     log(
         "logs",
         hostname + ".rest.info",
-        "Scanning image url",
+        "Latitude-Longitude pair added to RabbitMQ",
     )
-    r = request
-    url = jsonpickle.decode(r.data)["url"]
-    img = requests.get(url, allow_redirects=True)
-    try:
-        hash = hashlib.md5(img.content).hexdigest()
-        response = {"hash": hash}
-        obj = jsonpickle.encode({"image": img.content, "hash": hash, "filename": url})
-        enqueue("toWorker", obj)
-        log(
-            "logs",
-            hostname + ".rest.info",
-            "Hash-Filename(URL) pair added to RabbitMQ",
-        )
-    except:
-        response = {"hash": ""}
-    response_pickled = jsonpickle.encode(response)
-
-    return Response(response=response_pickled, status=200, mimetype="application/json")
-
-
-@app.route("/match/<hash>", methods=["GET"])
-def match(hash):
-    # using the hash, return a list of the image name or URL's that contain matching faces
-    # matches = redis_connection.hget("redisHashToHashSet", hash)
-    matches = []
-    print("Matching ", hash)
-    if redisHashToHashSet.exists(hash):
-        log(
-            "logs",
-            hostname + ".rest.info",
-            "Hash exists in Redis database",
-        )
-        print("Hash exists in Redis database")
-        for value in redisHashToHashSet.smembers(hash):
-            if redisHashToName.exists(value):
-                print("hash to name", value, redisHashToName.smembers(value))
-                for name in redisHashToName.smembers(value):
-                    print("Appending ", name)
-                    matches.append(name)
-    response = {"matches": matches}
-    response_pickled = jsonpickle.encode(response)
-    return Response(response=response_pickled, status=200, mimetype="application/json")
+    return Response(response=obj, status=200, mimetype="application/json")
 
 
 def enqueue(queue_name, obj):
