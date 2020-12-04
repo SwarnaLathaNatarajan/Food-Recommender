@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: "rest"
+spec:
+  type: NodePort
+  selector:
+    app: "rest"
+  ports:
+    - protocol: "TCP"
+      port: 5000
+      targetPort: 5000

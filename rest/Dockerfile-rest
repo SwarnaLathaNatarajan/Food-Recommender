@@ -1,0 +1,9 @@
+FROM python:3.9-alpine
+
+RUN pip3 install --upgrade pika redis jsonpickle requests flask
+
+ADD rest-server.py /home/rest-server.py
+
+EXPOSE	5000
+CMD ["/home/rest-server.py"]
+ENTRYPOINT ["python3"]

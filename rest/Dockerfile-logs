@@ -1,0 +1,8 @@
+FROM python:3.9-alpine
+
+RUN pip3 install pika
+
+ADD logs.py /home/logs.py
+
+CMD ["/home/logs.py"]
+ENTRYPOINT ["python"]

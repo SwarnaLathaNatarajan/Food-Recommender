@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest
+spec:
+  selector:
+    matchLabels:
+      app: rest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: rest
+    spec:
+      containers:
+      - name: rest
+        image: swarnalathanatarajan/rest:v1
+        env:
+        - name: RABBITMQ_HOST
+          value: rabbitmq
+        - name: REDIS_HOST
+          value: redis
+        imagePullPolicy: Always
+
+
+
+    
