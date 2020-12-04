@@ -60,7 +60,7 @@ def callback(ch, method, properties, body):
                 "Querying Backend Rapid API",
             )
     headers = {
-        'x-rapidapi-key': "43148b6118mshf09d051042ef830p18dcb1jsna96c6ad3cd3d",
+        'x-rapidapi-key': "",
         'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
         }
 
