@@ -29,6 +29,11 @@ channel.queue_declare(queue="toWorker")
 channel.queue_bind(exchange="toWorker", queue="toWorker", routing_key="info")
 print(" [*] Waiting for messages. To exit press CTRL+C")
 
+class Item:
+    def __init__(self, name, description, price):
+        self.foodName=name
+        self.description=description
+        self.price=price
 
 def log(queue_name, routing_key, message):
     rabbitMQ_connection = pika.BlockingConnection(
@@ -57,14 +62,15 @@ def callback(ch, method, properties, body):
     )
     url = "https://us-restaurant-menus.p.rapidapi.com/menuitems/search/geo"
 
-    querystring = {"lon":lat, "lat":lon, "distance": radius, "page": 1}
+    querystring = {"lon":lon,"lat":lat,"distance":radius,"page":"1"}
+
     log(
         "logs",
         hostname + ".worker.info",
         "Querying Backend Rapid API",
     )
     headers = {
-        'x-rapidapi-key': "",
+        'x-rapidapi-key': "4da4beaf58msh777f33561f3f9bap13722ejsna5635d03cc22",
         'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
     }
 
@@ -74,16 +80,16 @@ def callback(ch, method, properties, body):
         hostname + ".worker.info",
         response.text,
     )
-    redisUserToFoodItems.
+    redisUserToFoodItems.srem(user)
     response=response.json()
     foodItems=response["result"]["data"]
-    for foodItem in foodItems.keys():
-        foodName=foodItems[foodItem]["menu_item_name"]
-        description=foodItems[foodItem]["menu_item_description"]
-        redisUserToFoodItems.sadd(user, foodName, description)
-
-
-    
+    for foodItem in foodItems:
+        foodName=foodItem["menu_item_name"]
+        description=foodItem["menu_item_description"]
+        price=foodItem['menu_item_pricing'][0]["priceString"]
+        newItem=Item(foodName, description, price)
+        pickledItem = pickle.dumps(newItem)
+        redisUserToFoodItems.sadd(user, pickledItem)
    
 channel.basic_consume(queue="toWorker", auto_ack=True, on_message_callback=callback)
 
