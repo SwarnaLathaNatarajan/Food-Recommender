@@ -15,6 +15,8 @@ hostname = platform.node()
 redisHost = os.getenv("REDIS_HOST") or "localhost"
 rabbitMQHost = os.getenv("RABBITMQ_HOST") or "localhost"
 
+redisUserToFoodItems = redis.Redis(host=redisHost, db=1)   
+
 print("Connecting to rabbitmq({}) and redis({})".format(rabbitMQHost, redisHost))
 
 
@@ -42,34 +44,45 @@ def log(queue_name, routing_key, message):
 
 def callback(ch, method, properties, body):
     data = jsonpickle.decode(body.decode())
-    lat, lon = (
+    user, radius, lat, lon = (
+        data["user"],
+        data["radius"],
         data["lat"],
         data["lon"],
     )
     log(
         "logs",
         hostname + ".worker.info",
-        "Recieved message " + lat + " , "+lon,
+        "Recieved message " + user + ", " + lat + ", "+lon,
     )
-    url = "https://us-restaurant-menus.p.rapidapi.com/restaurants/search/geo"
+    url = "https://us-restaurant-menus.p.rapidapi.com/menuitems/search/geo"
 
-    querystring = {"lon":lat,"lat":lon,"distance":"1","page":"1"}
+    querystring = {"lon":lat, "lat":lon, "distance": radius, "page": 1}
     log(
-                "logs",
-                hostname + ".worker.info",
-                "Querying Backend Rapid API",
-            )
+        "logs",
+        hostname + ".worker.info",
+        "Querying Backend Rapid API",
+    )
     headers = {
         'x-rapidapi-key': "",
         'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
-        }
+    }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
     log(
-                "logs",
-                hostname + ".worker.info",
-                response.text,
-            )
+        "logs",
+        hostname + ".worker.info",
+        response.text,
+    )
+    redisUserToFoodItems.
+    response=response.json()
+    foodItems=response["result"]["data"]
+    for foodItem in foodItems.keys():
+        foodName=foodItems[foodItem]["menu_item_name"]
+        description=foodItems[foodItem]["menu_item_description"]
+        redisUserToFoodItems.sadd(user, foodName, description)
+
+
     
    
 channel.basic_consume(queue="toWorker", auto_ack=True, on_message_callback=callback)

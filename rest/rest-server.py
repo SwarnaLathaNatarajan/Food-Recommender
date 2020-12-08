@@ -29,6 +29,38 @@ def hello():
     return "<h1>Food Recommender</h1><p> Use a valid endpoint </p>"
 
 
+@app.route("/find/<user>/<radius>/<lat>/<lon>", methods=["POST"])
+def find(user,radius,lat,lon):
+    log(
+        "logs",
+        hostname + ".rest.info",
+        "Finding restaurant options nearby...",
+    )
+    obj = jsonpickle.encode({"user": name, "radius" : radius, "lat": lat, "lon":lon})
+    enqueue("toWorker", obj)
+    log(
+        "logs",
+        hostname + ".rest.info",
+        "Latitude-Longitude pair added to RabbitMQ",
+    )
+    return Response(response=obj, status=200, mimetype="application/json")
+
+@app.route("/find/<lat>/<lon>", methods=["GET","POST"])
+def find(lat,lon):
+    log(
+        "logs",
+        hostname + ".rest.info",
+        "Finding restaurant options nearby...",
+    )
+    obj = jsonpickle.encode({"lat": lat,"lon":lon})
+    enqueue("toWorker", obj)
+    log(
+        "logs",
+        hostname + ".rest.info",
+        "Latitude-Longitude pair added to RabbitMQ",
+    )
+    return Response(response=obj, status=200, mimetype="application/json")
+
 @app.route("/find/<lat>/<lon>", methods=["GET","POST"])
 def find(lat,lon):
     log(
