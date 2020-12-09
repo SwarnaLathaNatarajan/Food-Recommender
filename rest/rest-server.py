@@ -181,7 +181,7 @@ def getNext(user):
     foodItem=redisUserToFoodItems.spop(user)
     item=pickle.loads(foodItem)
     item.url=getUrl(item.foodName, 1)
-    return Response(response=foodItem, status=200, mimetype="application/json")
+    return Response(response=pickle.dumps(item), status=200, mimetype="application/json")
 
 
 def enqueue(queue_name, obj):
