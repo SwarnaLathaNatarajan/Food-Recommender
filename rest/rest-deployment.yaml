@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: rest
-        image: swarnalathanatarajan/rest:v1
+        image: shreekrishnasubburaj/project-rest:latest
         env:
         - name: RABBITMQ_HOST
           value: rabbitmq

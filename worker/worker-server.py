@@ -9,7 +9,7 @@ import sys
 import pika
 import redis
 import requests
-
+import pickle
 
 hostname = platform.node()
 redisHost = os.getenv("REDIS_HOST") or "localhost"
@@ -34,6 +34,7 @@ class Item:
         self.foodName=name
         self.description=description
         self.price=price
+        self.url=None
 
 def log(queue_name, routing_key, message):
     rabbitMQ_connection = pika.BlockingConnection(
@@ -48,13 +49,14 @@ def log(queue_name, routing_key, message):
 
 
 def callback(ch, method, properties, body):
-    data = jsonpickle.decode(body.decode())
+    data = pickle.loads(body)
     user, radius, lat, lon = (
         data["user"],
         data["radius"],
         data["lat"],
         data["lon"],
     )
+
     log(
         "logs",
         hostname + ".worker.info",
@@ -70,7 +72,7 @@ def callback(ch, method, properties, body):
         "Querying Backend Rapid API",
     )
     headers = {
-        'x-rapidapi-key': "",
+        'x-rapidapi-key': "4da4beaf58msh777f33561f3f9bap13722ejsna5635d03cc22",
         'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
     }
 
@@ -80,7 +82,8 @@ def callback(ch, method, properties, body):
         hostname + ".worker.info",
         response.text,
     )
-    redisUserToFoodItems.srem(user)
+    for item in redisUserToFoodItems.smembers(user):
+        redisUserToFoodItems.srem(user, item)
     response=response.json()
     foodItems=response["result"]["data"]
     for foodItem in foodItems:

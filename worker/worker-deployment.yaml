@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: swarnalathanatarajan/worker:v1
+        image: shreekrishnasubburaj/project-worker:latest
         env:
         - name: RABBITMQ_HOST
           value: rabbitmq
