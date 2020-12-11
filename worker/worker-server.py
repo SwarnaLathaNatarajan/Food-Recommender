@@ -63,7 +63,7 @@ def callback(ch, method, properties, body):
         "Recieved message " + user + ", " + lat + ", "+lon,
     )
     url = "https://us-restaurant-menus.p.rapidapi.com/menuitems/search/geo"
-
+    
     querystring = {"lon":lon,"lat":lat,"distance":radius,"page":"1"}
 
     log(
@@ -72,16 +72,17 @@ def callback(ch, method, properties, body):
         "Querying Backend Rapid API",
     )
     headers = {
-        'x-rapidapi-key': "4da4beaf58msh777f33561f3f9bap13722ejsna5635d03cc22",
+        'x-rapidapi-key': "",
         'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
     }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
-    log(
-        "logs",
-        hostname + ".worker.info",
-        response.text,
-    )
+    # log(
+    #     "logs",
+    #     hostname + ".worker.info",
+    #     response.text,
+    # )
+    
     for item in redisUserToFoodItems.smembers(user):
         redisUserToFoodItems.srem(user, item)
     response=response.json()
@@ -90,6 +91,7 @@ def callback(ch, method, properties, body):
         foodName=foodItem["menu_item_name"]
         description=foodItem["menu_item_description"]
         price=foodItem['menu_item_pricing'][0]["priceString"]
+
         newItem=Item(foodName, description, price)
         pickledItem = pickle.dumps(newItem)
         redisUserToFoodItems.sadd(user, pickledItem)

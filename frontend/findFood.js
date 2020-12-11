@@ -1,7 +1,7 @@
 const findFood = async () => {
 	var myForm = document.getElementById('formID');
-
-  const response = await fetch('http://34.120.175.58/find', {
+	user=myForm.name.value;
+	const response = await fetch('http://34.120.175.58/find', {
     method: 'POST',
 	mode: 'no-cors',
     body: JSON.stringify({
@@ -19,5 +19,5 @@ const findFood = async () => {
 }
 
 function redirect(){
-	window.open("index.html");
+    window.open('index.html');
 }

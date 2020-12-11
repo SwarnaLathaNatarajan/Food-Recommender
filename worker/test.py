@@ -23,7 +23,7 @@ querystring = {"lon":"-73.992378","lat":"40.68919","distance":"1","page":"1"}
 #     "Querying Backend Rapid API",
 # )
 headers = {
-    'x-rapidapi-key': "4da4beaf58msh777f33561f3f9bap13722ejsna5635d03cc22",
+    'x-rapidapi-key': "",
     'x-rapidapi-host': "us-restaurant-menus.p.rapidapi.com"
 }
 
